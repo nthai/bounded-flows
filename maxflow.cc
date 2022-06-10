@@ -35,11 +35,11 @@ using Graph = boost::adjacency_list<
     boost::property<boost::edge_capacity_t, Capacity, EdgeProps>>;
 
 struct MyGraph {
-    MyGraph(size_t nnodes) : _g(nnodes) {}
+    MyGraph(size_t nnodes, auto arcs, auto caps) : _g(nnodes), arcs(arcs), caps(caps) {}
 
-    void runSimulation(auto const& arcs, auto const& capacities, V src, V sink)
+    void runSimulation(V src, V sink)
     {
-        reconfigure(arcs, capacities);
+        reconfigure();
 
         Capacity maxflow = solve_max_flow(src, sink);
 
@@ -61,10 +61,12 @@ struct MyGraph {
 
 private:
     Graph _g;
+    std::vector<std::pair<V, V>> arcs;
+    std::vector<Capacity> caps;
 
-    void reconfigure(auto const& arcs, auto const& capacities)
+    void reconfigure()
     {
-        assert(arcs.size() == capacities.size());
+        assert(arcs.size() == caps.size());
 
         for (auto v : boost::make_iterator_range(vertices(_g))) {
             // boost::clear_out_edges(v, g);
@@ -82,7 +84,7 @@ private:
             auto edr  = add_edge(to, fr, _g).first;
             eidx[edf] = 2 * eindex;
             eidx[edr] = eidx[edf] + 1;
-            cap[edf]  = cap[edr] = capacities[eindex];
+            cap[edf]  = cap[edr] = caps[eindex];
 
             rev[edf] = edr;
             rev[edr] = edf;
@@ -131,7 +133,7 @@ int main() {
     using namespace std;
 
     vector<vector<double>> adj_matrix = get_mod_capacities();
-    vector<pair<long, long>> edges;
+    vector<pair<V, V>> edges;
     vector<double> caps;
     for (size_t i = 0; i < adj_matrix.size(); ++i) {
         for (size_t j = 0; j < adj_matrix[i].size(); j++) {
@@ -142,7 +144,7 @@ int main() {
         }
     }
 
-    MyGraph g{ adj_matrix.size() };
+    MyGraph g{ adj_matrix.size(), edges, caps };
     
     for (auto&& [arcs, capacities] : { tuple
             // // 1
@@ -155,6 +157,6 @@ int main() {
             {edges, caps}
         })
     {
-        g.runSimulation(arcs, capacities, 0, 5);
+        g.runSimulation(0, 6);
     }
 }
