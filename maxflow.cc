@@ -76,7 +76,7 @@ int main() {
     for (size_t from = 0; from < mod_vcount; from++) {
         for (size_t to = 0; to < mod_vcount; to++) {
             if (mod_capacities[from][to] != 0) {
-                add_edge(from, to, { mod_capacities[from][to], 0.0 }, g);
+                boost::add_edge(from, to, { mod_capacities[from][to], 0.0 }, g);
             }
         }
     }
