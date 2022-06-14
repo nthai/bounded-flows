@@ -132,6 +132,28 @@ std::vector<std::vector<double>> get_mod_capacities() {
         graph[from + 1][vcount + 1] += lower;
     }
 
+    graph[vcount][1] = 999;
+    
+    return graph;
+}
+
+std::vector<std::vector<std::pair<Capacity, Capacity>>> get_original_adj_matrix() {
+    using namespace std;
+    ifstream infile("graph.dat");
+    int vcount, ecount;
+    infile >> vcount >> ecount;
+
+    vector<vector<pair<Capacity, Capacity>>> graph(vcount, vector<pair<Capacity, Capacity>>(vcount, make_pair(0, 0)));
+
+    for (int i = 0; i < ecount; i++) {
+        int from, to;
+        double lower, upper;
+        infile >> from >> to >> lower >> upper;
+
+        graph[from][to].first = lower;
+        graph[from][to].second = upper;
+    }
+
     return graph;
 }
 
@@ -139,6 +161,7 @@ int main() {
     using namespace std;
 
     vector<vector<double>> adj_matrix = get_mod_capacities();
+    vector<vector<pair<double, double>>> original_adj_matrix = get_original_adj_matrix();
     vector<pair<V, V>> edges;
     vector<double> caps;
     for (size_t i = 0; i < adj_matrix.size(); ++i) {
@@ -163,6 +186,6 @@ int main() {
             {edges, caps}
         })
     {
-        g.runSimulation(0, 6);
+        g.runSimulation(0, 7);
     }
 }
