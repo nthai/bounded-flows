@@ -114,31 +114,30 @@ std::tuple<double, AdjMatrix, AdjMatrix> maxflow(AdjMatrix g, int s, int t) {
     return { max_flow, rGraph, fGraph };
 }
 
-std::tuple<double, AdjMatrix, AdjMatrix> improve_flow(AdjMatrix residual, AdjMatrix fGraph, int s, int t) {
+std::tuple<double, AdjMatrix, OriginalAdjMatrix> improve_flow(AdjMatrix residual, OriginalAdjMatrix graph, int s, int t) {
     double plus_flow = 0;
-    std::vector<int> parent(residual.size(), -1);
     int u, v;
+    std::vector<int> parent(residual.size(), -1);
     while (bfs(residual, s, t, parent)) {
         std::cout << "FOUND!\n";
         double path_flow = 99999;
-        for (v = t; v != s; v = parent[v])
-        {
+        for (v = t; v != s; v = parent[v]) {
             u = parent[v];
             path_flow = std::min(path_flow, residual[u][v]);
             // std::cout << "path flow: " << path_flow << std::endl;
         }
-        for (v = t; v != s; v = parent[v])
-        {
+        for (v = t; v != s; v = parent[v]) {
             u = parent[v];
             residual[u][v] -= path_flow;
             residual[v][u] += path_flow;
 
-            fGraph[u][v] += path_flow;
-            fGraph[v][u] -= path_flow;
+            graph[u][v].first += path_flow;
         }
         plus_flow += path_flow;
+
+        parent = std::vector<int>(residual.size(), -1);
     }
-    return { plus_flow, residual, fGraph };
+    return { plus_flow, residual, graph };
 }
 
 void print_graph(OriginalAdjMatrix const& g) {
@@ -152,15 +151,25 @@ void print_graph(OriginalAdjMatrix const& g) {
     }
 }
 
-OriginalAdjMatrix set_flows(OriginalAdjMatrix const& orig, AdjMatrix const& flow) {
+std::tuple<OriginalAdjMatrix, AdjMatrix> set_flows(OriginalAdjMatrix const& orig, AdjMatrix const& flow) {
     OriginalAdjMatrix flows(orig);
+    AdjMatrix residual(orig.size(), std::vector<double>(orig.size(), 0));
+    
     for (int i = 0; i < orig.size(); ++i) {
         for (int j = 0; j < orig.size(); ++j) {
             if (flow[i + 1][j + 1] > 0)
                 flows[i][j].first += flow[i + 1][j + 1];
         }
     }
-    return flows;
+
+    for (int i = 0; i < orig.size(); ++i) {
+        for (int j = 0; j < orig.size(); ++j) {
+            if(flows[i][j].second - flows[i][j].first > 0)
+                residual[i][j] = flows[i][j].second - flows[i][j].first;
+        }
+    }
+    
+    return { flows, residual };
 }
 
 int main() {
@@ -176,11 +185,15 @@ int main() {
     print_graph(orig);
     
     std::cout << "New graph\n";
-    auto flows = set_flows(orig, fGraph);
+    auto [flows, newres] = set_flows(orig, fGraph);
     print_graph(flows);
+    std::cout << "New residual\n";
+    print_graph(newres);
 
     double improved_flow;
-    std::tie(improved_flow, rGraph, fGraph) = improve_flow(rGraph, fGraph, 0, 5);
-    std::cout << "Residual\n";
-    print_graph(rGraph);
+    std::tie(improved_flow, newres, flows) = improve_flow(newres, flows, 0, 5);
+    std::cout << "Improved Residual\n";
+    print_graph(newres);
+    std::cout << "Improved Flows" << improved_flow << "\n";
+    print_graph(flows);
 }
